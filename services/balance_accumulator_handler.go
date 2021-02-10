@@ -207,7 +207,8 @@ func (a *BalancerAccumulateHandler) processOutputsPre(outputProcessed bool, typ 
 				Where(tbl+".output_out_processed = ?", 1).
 				OrderAsc(tbl + ".output_out_processed")
 		} else {
-			b = b.Join("avm_outputs", tbl+".output_id = avm_outputs.id")
+			b = b.
+				Join("avm_outputs", tbl+".output_id = avm_outputs.id")
 		}
 	case processTypeIn:
 		if outputProcessed {
@@ -217,7 +218,9 @@ func (a *BalancerAccumulateHandler) processOutputsPre(outputProcessed bool, typ 
 				OrderAsc(tbl + ".output_out_processed").
 				OrderAsc(tbl + ".output_in_processed")
 		} else {
-			b = b.Join("avm_outputs_redeeming", tbl+".output_id = avm_outputs_redeeming.id")
+			b = b.
+				Join("avm_outputs", tbl+".output_id = avm_outputs.id").
+				Join("avm_outputs_redeeming", tbl+".output_id = avm_outputs_redeeming.id")
 		}
 	}
 
