@@ -311,6 +311,11 @@ func (w *Writer) InsertOutput(
 		CreatedAt:     ctx.Time(),
 	}
 
+	err = ctx.Persist().UpdateOutputAddressAccumulateOutOutputsProcessed(ctx.Ctx(), ctx.DB(), outputID.String())
+	if err != nil {
+		return err
+	}
+
 	// ensure that addresses are created before the outputs
 	return ctx.Persist().InsertOutputs(ctx.Ctx(), ctx.DB(), output, cfg.PerformUpdates)
 }

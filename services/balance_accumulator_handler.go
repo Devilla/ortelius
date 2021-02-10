@@ -196,21 +196,28 @@ func (a *BalancerAccumulateHandler) processOutputsPre(outputProcessed bool, typ 
 		tbl+".output_id",
 		tbl+".address",
 	).
-		From(tbl).
-		Join("avm_outputs", tbl+".output_id = avm_outputs.id")
+		From(tbl)
 
-	b.Where(tbl+".processed = ?", 0)
+	b = b.Where(tbl+".processed = ?", 0)
 
 	switch typ {
 	case processTypeOut:
+		if outputProcessed {
+			b = b.
+				Where(tbl+".output_out_processed = ?", 1).
+				OrderAsc(tbl + ".output_out_processed")
+		} else {
+			b = b.Join("avm_outputs", tbl+".output_id = avm_outputs.id")
+		}
 	case processTypeIn:
 		if outputProcessed {
 			b = b.
-				Where(tbl+".output_processed = ?", 1).
-				OrderAsc(tbl + ".output_processed")
+				Where(tbl+".output_out_processed = ?", 1).
+				Where(tbl+".output_in_processed = ?", 1).
+				OrderAsc(tbl + ".output_out_processed").
+				OrderAsc(tbl + ".output_in_processed")
 		} else {
-			b = b.
-				Join("avm_outputs_redeeming", tbl+".output_id = avm_outputs_redeeming.id ")
+			b = b.Join("avm_outputs_redeeming", tbl+".output_id = avm_outputs_redeeming.id")
 		}
 	}
 
@@ -230,8 +237,7 @@ func (a *BalancerAccumulateHandler) processOutputsPre(outputProcessed bool, typ 
 	switch typ {
 	case processTypeOut:
 	case processTypeIn:
-		sc = sc.
-			Join("avm_outputs_redeeming", "a.output_id = avm_outputs_redeeming.id ")
+		sc = sc.Join("avm_outputs_redeeming", "a.output_id = avm_outputs_redeeming.id ")
 	}
 
 	_, err = sc.

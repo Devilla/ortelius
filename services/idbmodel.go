@@ -265,6 +265,11 @@ type Persist interface {
 		dbr.SessionRunner,
 		string,
 	) error
+	UpdateOutputAddressAccumulateOutOutputsProcessed(
+		context.Context,
+		dbr.SessionRunner,
+		string,
+	) error
 
 	QueryOutputTxsAccumulate(
 		context.Context,
@@ -1353,12 +1358,13 @@ func (p *persist) InsertAddressBech32(
 }
 
 type OutputAddressAccumulate struct {
-	ID              string
-	OutputID        string
-	Address         string
-	Processed       int
-	OutputProcessed int
-	CreatedAt       time.Time
+	ID                 string
+	OutputID           string
+	Address            string
+	Processed          int
+	OutputInProcessed  int
+	OutputOutProcessed int
+	CreatedAt          time.Time
 }
 
 func (b *OutputAddressAccumulate) ComputeID() error {
@@ -1455,8 +1461,34 @@ func (p *persist) UpdateOutputAddressAccumulateInOutputsProcessed(
 	var err error
 	_, err = sess.
 		Update(TableOutputAddressAccumulateIn).
-		Set("output_processed", 1).
-		Where("output_id=? and output_processed <> ?", id, 1).
+		Set("output_in_processed", 1).
+		Where("output_id=? and output_in_processed <> ?", id, 1).
+		ExecContext(ctx)
+	if err != nil && !db.ErrIsDuplicateEntryError(err) {
+		return EventErr(TableOutputAddressAccumulateIn, false, err)
+	}
+
+	return nil
+}
+
+func (p *persist) UpdateOutputAddressAccumulateOutOutputsProcessed(
+	ctx context.Context,
+	sess dbr.SessionRunner,
+	id string,
+) error {
+	var err error
+	_, err = sess.
+		Update(TableOutputAddressAccumulateOut).
+		Set("output_out_processed", 1).
+		Where("output_id=? and output_out_processed <> ?", id, 1).
+		ExecContext(ctx)
+	if err != nil && !db.ErrIsDuplicateEntryError(err) {
+		return EventErr(TableOutputAddressAccumulateOut, false, err)
+	}
+	_, err = sess.
+		Update(TableOutputAddressAccumulateIn).
+		Set("output_out_processed", 1).
+		Where("output_id=? and output_out_processed <> ?", id, 1).
 		ExecContext(ctx)
 	if err != nil && !db.ErrIsDuplicateEntryError(err) {
 		return EventErr(TableOutputAddressAccumulateIn, false, err)

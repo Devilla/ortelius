@@ -398,7 +398,23 @@ func (m *MockPersist) UpdateOutputAddressAccumulateInOutputsProcessed(ctx contex
 	defer m.lock.Unlock()
 	for _, v := range m.OutputAddressAccumulateIn {
 		if v.OutputID == id {
-			v.OutputProcessed = 1
+			v.OutputInProcessed = 1
+		}
+	}
+	return nil
+}
+
+func (m *MockPersist) UpdateOutputAddressAccumulateOutOutputsProcessed(ctx context.Context, runner dbr.SessionRunner, id string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for _, v := range m.OutputAddressAccumulateOut {
+		if v.OutputID == id {
+			v.OutputOutProcessed = 1
+		}
+	}
+	for _, v := range m.OutputAddressAccumulateIn {
+		if v.OutputID == id {
+			v.OutputOutProcessed = 1
 		}
 	}
 	return nil
